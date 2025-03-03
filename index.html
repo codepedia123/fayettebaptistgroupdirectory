@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member List</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            font-weight: 300;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .header {
+            font-size: 24px;
+            color: #418fcf;
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border: 1px solid #b3d237;
+            border-radius: 30px;
+            padding: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .search-bar input {
+            border: none;
+            background-color: transparent;
+            font-size: 16px;
+            color: #b3d237;
+            font-family: 'Open Sans', sans-serif;
+            outline: none;
+            width: 100%;
+            margin-left: 10px;
+        }
+
+        .member-list {
+            max-height: 70vh;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border-radius: 30px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #418fcf;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .member-item img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 20px;
+        }
+
+        .member-info {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .member-name {
+            font-size: 18px;
+            color: #418fcf;
+            font-weight: bold;
+        }
+
+        .member-details {
+            font-size: 14px;
+            color: #555;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">Member Directory</div>
+
+    <div class="search-bar">
+        <img src="https://img.icons8.com/ios-filled/50/000000/search--v1.png" alt="Search Icon" width="20">
+        <input type="text" placeholder="Search" id="search-input">
+    </div>
+
+    <div class="member-list" id="member-list">
+        <!-- Members will be dynamically added here -->
+    </div>
+
+    <script src="https://thunkable.github.io/webviewer-extension/thunkableWebviewerExtension.js" type="text/javascript"></script>
+
+    <script>
+        const searchInput = document.getElementById('search-input');
+        const memberList = document.getElementById('member-list');
+
+        // Function to update member list from JSON
+        function updateMemberList(jsonData) {
+            try {
+                const profiles = JSON.parse(jsonData);
+                memberList.innerHTML = ''; // Clear existing list
+
+                profiles.forEach((profile, index) => {
+                    const memberItem = document.createElement('div');
+                    memberItem.className = 'member-item';
+                    memberItem.setAttribute('data-name', profile.name.toLowerCase());
+
+                    // Click event to send row number
+                    memberItem.onclick = () => showRowNumber(index + 1);
+
+                    const memberImg = document.createElement('img');
+                    memberImg.src = profile.profilePic || 'https://via.placeholder.com/60';
+                    memberImg.alt = profile.name;
+
+                    const memberInfo = document.createElement('div');
+                    memberInfo.className = 'member-info';
+
+                    const memberName = document.createElement('div');
+                    memberName.className = 'member-name';
+                    memberName.textContent = profile.name;
+
+                    const memberDetails = document.createElement('div');
+                    memberDetails.className = 'member-details';
+                    memberDetails.innerHTML = `
+                        <strong>Position:</strong> ${profile.position || 'N/A'} <br>
+                        <strong>Email:</strong> <a href="mailto:${profile.email}">${profile.email}</a> <br>
+                        <strong>Phone:</strong> <a href="tel:${profile.phone}">${profile.phone}</a> <br>
+                        <strong>Birthday:</strong> ${profile.birthday || 'N/A'}
+                    `;
+
+                    memberInfo.appendChild(memberName);
+                    memberInfo.appendChild(memberDetails);
+                    memberItem.appendChild(memberImg);
+                    memberItem.appendChild(memberInfo);
+                    memberList.appendChild(memberItem);
+                });
+            } catch (e) {
+                console.error("Invalid JSON format", e);
+            }
+        }
+
+        // Function to send row number to Thunkable Web Viewer
+        function showRowNumber(rowNumber) {
+            ThunkableWebviewerExtension.postMessage("Row Number: " + rowNumber);
+        }
+
+        // Receive JSON from Thunkable Web Viewer
+        ThunkableWebviewerExtension.receiveMessage(function(message) {
+            updateMemberList(message);
+        });
+
+        // Search functionality
+        searchInput.addEventListener('input', function() {
+            const filter = searchInput.value.toLowerCase();
+            const members = memberList.getElementsByClassName('member-item');
+
+            Array.from(members).forEach(function(member) {
+                const name = member.getAttribute('data-name');
+                member.style.display = name.includes(filter) ? '' : 'none';
+            });
+        });
+
+    </script>
+
+</body>
+</html>
